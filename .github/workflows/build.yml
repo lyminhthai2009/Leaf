@@ -1,0 +1,52 @@
+# Tên quy trình, dễ hiểu
+name: Build Leaf 1.20.1 Server
+
+# Kích hoạt khi có push lên nhánh chứa code 1.20.1 của bạn
+on: [push]
+
+jobs:
+  build:
+    # Sử dụng máy chủ miễn phí, tiêu chuẩn của GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Bước 1: Lấy mã nguồn về, tải toàn bộ lịch sử để tránh lỗi Git
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Bước 2: Cài đặt Java 21. Chúng ta vẫn dùng JDK 21 để build cho hiệu năng tốt.
+      # Sản phẩm cuối cùng vẫn sẽ tương thích Java 17 nhờ cấu hình trong build.gradle.kts
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      # Bước 3: Cấp quyền thực thi cho Gradle
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # Bước 4: Cấu hình Git cho máy chủ ảo
+      - name: Configure Git
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+
+      # Bước 5: Chạy tác vụ chuẩn bị mã nguồn
+      - name: Apply Patches
+        run: ./gradlew applyPatches --stacktrace --no-daemon
+
+      # Bước 6: Chạy tác vụ tạo file server .jar cuối cùng
+      - name: Create Reobf Paperclip Jar
+        run: ./gradlew createReobfPaperclipJar --stacktrace --no-daemon
+
+      # Bước 7: Đóng gói file server .jar thành phẩm để bạn tải về
+      - name: Upload Server JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Leaf-Server-1.20.1-JAR
+          # Đường dẫn này có thể cần điều chỉnh, nhưng thường là đúng
+          path: 'build/libs/Leaf-paperclip-*-reobf.jar'
