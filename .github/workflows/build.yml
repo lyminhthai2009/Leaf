@@ -1,23 +1,17 @@
-# Tên của quy trình
 name: Build Leaf Server
 
-# Kích hoạt mỗi khi có lệnh "git push"
 on: [push]
 
 jobs:
   build:
-    # Yêu cầu một máy chủ miễn phí, tiêu chuẩn của GitHub
     runs-on: ubuntu-latest
 
     steps:
-      # Bước 1: Lấy mã nguồn về
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Tải về toàn bộ lịch sử Git để sửa lỗi "git describe"
           fetch-depth: 0
 
-      # Bước 2: Cài đặt Java 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -25,21 +19,17 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      # Bước 3: Cấp quyền thực thi cho Gradle
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # Bước 4: Cấu hình Git cho máy chủ ảo để sửa lỗi "Committer identity unknown"
       - name: Configure Git
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
 
-      # Bước 5: Chạy tác vụ chuẩn bị mã nguồn (bắt buộc)
       - name: Apply Patches
         run: ./gradlew applyAllPatches
 
-      # Bước 6: Đóng gói mã nguồn đã xử lý để gửi về cho bạn sửa code
       - name: Upload Patched Sources for IDE
         uses: actions/upload-artifact@v4
         with:
@@ -50,11 +40,9 @@ jobs:
             leaf-api
             leaf-server
 
-      # Bước 7: Chỉ chạy tác vụ tạo file server, không chạy các tác vụ linh tinh khác
       - name: Build Server JAR
         run: ./gradlew :leaf-server:paperclip
 
-      # Bước 8: Đóng gói file server .jar thành phẩm để gửi về cho bạn
       - name: Upload Server JAR Artifact
         uses: actions/upload-artifact@v4
         with:
